@@ -30,23 +30,34 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
+      # Шаг 1: Прогон Cucumber тестов
       - name: Build and run Cucumber tests
         run: mvn clean verify
 
+      # Шаг 2: Прогон Gatling тестов
       - name: Run Gatling tests
         run: mvn gatling:test
 
-      - name: Prepare reports directory
+      # Шаг 3: Генерация Allure-репорта для Cucumber
+      - name: Generate Allure report
+        run: |
+          allure generate target/allure-results -o reports/cucumber
+
+      # Шаг 4: Создание файла index.html с собранными ссылками
+      - name: Prepare reports index
         run: |
           mkdir -p reports
-          cp -r target/allure-results reports/cucumber
-          cp -r target/gatling reports/gatling
-          cp static/index.html reports/index.html
+          echo "<!DOCTYPE html>" > reports/index.html
+          echo "<html><head><title>Test Reports</title></head><body>" >> reports/index.html
+          echo "<h1>Test Reports</h1><ul>" >> reports/index.html
+          echo "<li><a href=\"cucumber/index.html\">Cucumber Report</a></li>" >> reports/index.html
+          GATLING_REPORT=$(find target/gatling -name "index.html" | head -n 1)
+          echo "<li><a href=\"gatling/$(basename $(dirname $GATLING_REPORT))/index.html\">Gatling Report</a></li>" >> reports/index.html
+          echo "</ul></body></html>" >> reports/index.html
 
+      # Шаг 5: Деплой на GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: reports
-
-
