@@ -12,17 +12,24 @@ env:
 
 jobs:
   test:
+    # This job runs on the latest Ubuntu environment provided by GitHub Actions.
     runs-on: ubuntu-latest
+
     steps:
+      # Step: Checkout the code from the repository into the runner.
       - name: Checkout
         uses: actions/checkout@v3
 
+      # Step: Set up Java Development Kit (JDK) version 17 from the Temurin distribution.
+      # This ensures that our Maven-based Java tests will run with the correct Java version.
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
 
+      # Step: Cache Maven dependencies to speed up subsequent builds.
+      # It caches the ~/.m2/repository directory so that Maven doesn't need to re-download all dependencies every run.
       - name: Cache Maven
         uses: actions/cache@v3
         with:
@@ -30,12 +37,20 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
+      # Step: Run Functional Tests (Cucumber + JUnit).
+      # This command executes 'mvn clean verify', which runs unit tests and Cucumber scenarios, producing allure-results.
       - name: Run Functional Tests
         run: mvn clean verify
 
+      # Step: Run Performance Tests (Gatling).
+      # This executes the Gatling simulations defined in the project (e.g. load or stress tests),
+      # generating performance test reports in the target/gatling directory.
       - name: Run Performance Tests (Gatling)
         run: mvn gatling:test
 
+      # Step: Upload Allure Results.
+      # After tests, allure-results are generated in target/allure-results.
+      # We upload them as artifacts so the next job can use them to generate the Allure report.
       - name: Upload Allure Results
         if: success()
         uses: actions/upload-artifact@v3
@@ -43,6 +58,9 @@ jobs:
           name: allure-results
           path: target/allure-results
 
+      # Step: Upload Gatling Report.
+      # Gatling reports are located in target/gatling.
+      # We upload them as artifacts so the next job can incorporate them into GitHub Pages.
       - name: Upload Gatling Report
         if: success()
         uses: actions/upload-artifact@v3
@@ -51,29 +69,42 @@ jobs:
           path: target/gatling
 
   deploy:
+    # This job runs only if the 'test' job succeeded and the event is a push on the main branch.
+    # It handles generating the Allure HTML report and integrating Gatling HTML reports,
+    # then publishes these reports to GitHub Pages.
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
     steps:
+      # Step: Download Allure Results from the previous job's artifacts.
+      # We will use these results to generate the Allure HTML report.
       - name: Download Allure Results
         uses: actions/download-artifact@v3
         with:
           name: allure-results
           path: allure-results
 
+      # Step: Download Gatling Report from the previous job's artifacts.
+      # We will integrate these reports into our final published test reports page.
       - name: Download Gatling Report
         uses: actions/download-artifact@v3
         with:
           name: gatling-report
           path: gatling-report
 
-      - name: Debug: List downloaded artifacts
+      # Step: Debug listing of downloaded artifacts.
+      # This step is optional. It lists the contents of allure-results and gatling-report directories,
+      # helping troubleshoot if the reports are in unexpected locations.
+      - name: "Debug: List downloaded artifacts"
         run: |
           echo "Allure Results:"
           ls -R allure-results
           echo "Gatling Report:"
           ls -R gatling-report
 
+      # Step: Install Allure CLI.
+      # We install the Allure command line tool to generate a human-readable HTML report from allure-results.
       - name: Install Allure CLI
         run: |
           sudo apt-get update
@@ -82,9 +113,20 @@ jobs:
           unzip allure-${{ env.ALLURE_VERSION }}.zip -d /opt/allure
           sudo ln -s /opt/allure/allure-${{ env.ALLURE_VERSION }}/bin/allure /usr/bin/allure
 
+      # Step: Generate Allure Report.
+      # Using the installed Allure CLI, we generate the HTML report from the allure-results.
+      # The report is placed in reports/cucumber directory for consistent naming.
       - name: Generate Allure Report
         run: allure generate allure-results -o reports/cucumber --clean
 
+      # Step: Prepare Reports Index.
+      # Here we create an index.html page that links to both the Cucumber (Allure) and Gatling reports.
+      # We:
+      #  1. Create a base reports directory.
+      #  2. Generate an index.html with links to each report.
+      #  3. Find the Gatling report index.html in gatling-report directory.
+      #  4. Copy the Gatling report into the reports/gatling folder.
+      #  5. Add a link to the Gatling report in the index.html.
       - name: Prepare Reports Index
         run: |
           mkdir -p reports
@@ -100,12 +142,16 @@ jobs:
           REPORT_BASENAME=$(basename $REPORT_DIR)
           mkdir -p reports/gatling
           cp -r $REPORT_DIR reports/gatling/
-          # Now reports/gatling/REPORT_BASENAME/index.html should exist
+          # Now reports/gatling/$REPORT_BASENAME/index.html should exist
           echo "<li><a href=\"gatling/${REPORT_BASENAME}/index.html\">Gatling Report</a></li>" >> reports/index.html
           echo "</ul></body></html>" >> reports/index.html
 
+      # Step: Deploy to GitHub Pages.
+      # We use the peaceiris/actions-gh-pages action to publish the reports directory to GitHub Pages,
+      # making the reports accessible via a GitHub Pages URL.
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: reports
+
