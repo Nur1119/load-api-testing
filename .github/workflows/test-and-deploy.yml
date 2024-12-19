@@ -2,82 +2,108 @@ name: API and Performance Testing CI/CD
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
+
+env:
+  JAVA_VERSION: "17"
+  ALLURE_VERSION: "2.19.0"
 
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
-
     steps:
-      # Шаг: Клонирование репозитория
-      - name: Checkout repository
+      # Checkout source code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      # Шаг: Установка JDK 17
-      - name: Set up JDK 17
+      # Setup JDK
+      - name: Set up JDK
         uses: actions/setup-java@v3
         with:
-          java-version: '17'
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
 
-      # Шаг: Кэширование зависимостей Maven
-      - name: Cache Maven packages
+      # Cache Maven dependencies
+      - name: Cache Maven
         uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+          restore-keys: ${{ runner.os }}-maven-
 
-      # Шаг: Кэширование Allure CLI
-      - name: Cache Allure CLI
-        uses: actions/cache@v3
+      # Run functional tests (Cucumber + Allure results)
+      - name: Run Functional Tests
+        run: mvn clean verify
+
+      # Run performance tests (Gatling)
+      - name: Run Performance Tests
+        run: mvn gatling:test
+
+      # Upload allure-results as artifact for next job
+      - name: Upload Allure Results
+        if: success()
+        uses: actions/upload-artifact@v3
         with:
-          path: /opt/allure
-          key: ${{ runner.os }}-allure-2.19.0
-          restore-keys: |
-            ${{ runner.os }}-allure-
+          name: allure-results
+          path: target/allure-results
 
-      # Шаг: Установка Allure CLI (если нет в кэше)
+      # Upload Gatling report for next job
+      - name: Upload Gatling Report
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: gatling-report
+          path: target/gatling
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      # Download artifacts
+      - name: Download Allure Results
+        uses: actions/download-artifact@v3
+        with:
+          name: allure-results
+          path: allure-results
+
+      - name: Download Gatling Report
+        uses: actions/download-artifact@v3
+        with:
+          name: gatling-report
+          path: gatling-report
+
+      # Install Allure CLI if needed
       - name: Install Allure CLI
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           sudo apt-get update
           sudo apt-get install -y unzip
-          wget https://github.com/allure-framework/allure2/releases/download/2.19.0/allure-2.19.0.zip
-          unzip allure-2.19.0.zip -d /opt/allure
-          sudo ln -s /opt/allure/allure-2.19.0/bin/allure /usr/bin/allure
+          wget https://github.com/allure-framework/allure2/releases/download/${{ env.ALLURE_VERSION }}/allure-${{ env.ALLURE_VERSION }}.zip
+          unzip allure-${{ env.ALLURE_VERSION }}.zip -d /opt/allure
+          sudo ln -s /opt/allure/allure-${{ env.ALLURE_VERSION }}/bin/allure /usr/bin/allure
 
-      # Шаг: Прогон Cucumber тестов
-      - name: Run Cucumber tests
-        run: mvn clean verify
+      # Generate Allure report
+      - name: Generate Allure Report
+        run: allure generate allure-results -o reports/cucumber --clean
 
-      # Шаг: Прогон Gatling тестов
-      - name: Run Gatling tests
-        run: mvn gatling:test
-
-      # Шаг: Генерация Allure-репорта
-      - name: Generate Allure report
-        run: |
-          allure generate target/allure-results -o reports/cucumber
-
-      # Шаг: Подготовка index.html
-      - name: Prepare reports index
+      # Prepare index.html with links to reports
+      - name: Prepare Reports Index
         run: |
           mkdir -p reports
           echo "<!DOCTYPE html>" > reports/index.html
           echo "<html><head><title>Test Reports</title></head><body>" >> reports/index.html
           echo "<h1>Test Reports</h1><ul>" >> reports/index.html
           echo "<li><a href=\"cucumber/index.html\">Cucumber Report</a></li>" >> reports/index.html
-          GATLING_REPORT=$(find target/gatling -name "index.html" | head -n 1)
-          echo "<li><a href=\"gatling/$(basename $(dirname $GATLING_REPORT))/index.html\">Gatling Report</a></li>" >> reports/index.html
+          GATLING_REPORT=$(find gatling-report -name "index.html" | head -n 1)
+          RELATIVE_PATH="gatling/$(basename $(dirname $GATLING_REPORT))"
+          mkdir -p reports/gatling
+          cp -r $(dirname $GATLING_REPORT) reports/gatling/
+          echo "<li><a href=\"${RELATIVE_PATH}/index.html\">Gatling Report</a></li>" >> reports/index.html
           echo "</ul></body></html>" >> reports/index.html
 
-      # Шаг: Деплой на GitHub Pages
+      # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
