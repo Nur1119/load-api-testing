@@ -17,7 +17,7 @@
 <script src="js/highcharts-more.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/unpack.js"></script>
-<title>Gatling Stats - Delete Game - Super Mario 64</title>
+<title>Gatling Stats - Create New Game - Gran Turismo 3</title>
 </head>
 <body>
 <div class="app-container">
@@ -183,7 +183,7 @@ You are using Gatling 3.9.0
     </div>
 </div>
 <script>
-    var pageStats = stats.contents['req_delete-game---s-e1117'].stats;
+    var pageStats = stats.contents['req_create-new-game-98820'].stats;
     $(document).ready(function() {
         $('.simulation-tooltip').popover({trigger:'hover', placement:'left'});
         setDetailsLinkUrl();
@@ -312,7 +312,7 @@ var responsetimeDistributionChart = new Highcharts.Chart({
     maskInside: false
   },
   xAxis: {
-    categories: ['102', '109'],
+    categories: ['83'],
     tickInterval: 20
   },
   yAxis: {
@@ -340,7 +340,7 @@ type: 'column',
 color: '#68b65c',
 name: 'OK',
 data: [
-  50.0,50.0
+  100.0
 ],
 tooltip: { yDecimals: 0, ySuffix: 'ms' }
 },
@@ -361,7 +361,7 @@ responsetimeDistributionChart.setTitle({
   useHTML: true
 });
 
-var responsetimepercentilesovertimeokPercentiles = unpack([[1734625780,null],[1734625781,null],[1734625782,null],[1734625783,null],[1734625784,null],[1734625785,null],[1734625786,null],[1734625787,null],[1734625788,null],[1734625789,[102,102,102,102,102,102,102,102,102,102]],[1734625790,null],[1734625791,[109,109,109,109,109,109,109,109,109,109]],[1734625792,null],[1734625793,null],[1734625794,null],[1734625795,null],[1734625796,null]]);
+var responsetimepercentilesovertimeokPercentiles = unpack([[1734627003,null],[1734627004,null],[1734627005,null],[1734627006,null],[1734627007,null],[1734627008,null],[1734627009,null],[1734627010,null],[1734627011,null],[1734627012,null],[1734627013,null],[1734627014,null],[1734627015,[83,83,83,83,83,83,83,83,83,83]],[1734627016,null],[1734627017,null],[1734627018,null],[1734627019,null]]);
 
 var responsetimepercentilesovertimeokPercentilesChart = new Highcharts.StockChart({
   chart: {
@@ -558,7 +558,7 @@ responsetimepercentilesovertimeokPercentilesChart.setTitle({
   useHTML: true
 });
 
-var requests = unpack([[1734625780,[0,0,0]],[1734625781,[0,0,0]],[1734625782,[0,0,0]],[1734625783,[0,0,0]],[1734625784,[0,0,0]],[1734625785,[0,0,0]],[1734625786,[0,0,0]],[1734625787,[0,0,0]],[1734625788,[0,0,0]],[1734625789,[1,1,0]],[1734625790,[0,0,0]],[1734625791,[1,1,0]],[1734625792,[0,0,0]],[1734625793,[0,0,0]],[1734625794,[0,0,0]],[1734625795,[0,0,0]],[1734625796,[0,0,0]]]);
+var requests = unpack([[1734627003,[0,0,0]],[1734627004,[0,0,0]],[1734627005,[0,0,0]],[1734627006,[0,0,0]],[1734627007,[0,0,0]],[1734627008,[0,0,0]],[1734627009,[0,0,0]],[1734627010,[0,0,0]],[1734627011,[0,0,0]],[1734627012,[0,0,0]],[1734627013,[0,0,0]],[1734627014,[0,0,0]],[1734627015,[1,1,0]],[1734627016,[0,0,0]],[1734627017,[0,0,0]],[1734627018,[0,0,0]],[1734627019,[0,0,0]]]);
 
 var requestsChart = new Highcharts.StockChart({
   chart: {
@@ -669,7 +669,7 @@ requestsChart.setTitle({
   useHTML: true
 });
 
-var responses = unpack([[1734625780,[0,0,0]],[1734625781,[0,0,0]],[1734625782,[0,0,0]],[1734625783,[0,0,0]],[1734625784,[0,0,0]],[1734625785,[0,0,0]],[1734625786,[0,0,0]],[1734625787,[0,0,0]],[1734625788,[0,0,0]],[1734625789,[1,1,0]],[1734625790,[0,0,0]],[1734625791,[1,1,0]],[1734625792,[0,0,0]],[1734625793,[0,0,0]],[1734625794,[0,0,0]],[1734625795,[0,0,0]],[1734625796,[0,0,0]]]);
+var responses = unpack([[1734627003,[0,0,0]],[1734627004,[0,0,0]],[1734627005,[0,0,0]],[1734627006,[0,0,0]],[1734627007,[0,0,0]],[1734627008,[0,0,0]],[1734627009,[0,0,0]],[1734627010,[0,0,0]],[1734627011,[0,0,0]],[1734627012,[0,0,0]],[1734627013,[0,0,0]],[1734627014,[0,0,0]],[1734627015,[1,1,0]],[1734627016,[0,0,0]],[1734627017,[0,0,0]],[1734627018,[0,0,0]],[1734627019,[0,0,0]]]);
 
 var requestsChart = new Highcharts.StockChart({
   chart: {
@@ -789,7 +789,7 @@ tooltip: { yDecimals: 0, ySuffix: '', valueDecimals: 0 }
 type: 'pie',
 name: 'Distribution',
 data: [
-  {name: 'OK', y: 2.0, color: '#68b65c'},{name: 'KO', y: 0.0, color: '#f15b4f'}
+  {name: 'OK', y: 1.0, color: '#68b65c'},{name: 'KO', y: 0.0, color: '#f15b4f'}
 ],
 center: [775, -40],
 size: 70,
@@ -867,7 +867,7 @@ type: 'scatter',
 color: '#68b65c',
 name: 'OK',
 data: [
-[2,102],[2,109]
+[2,83]
 ]},
 	  {
 type: 'scatter',

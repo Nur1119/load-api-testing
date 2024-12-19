@@ -1,7 +1,7 @@
 {
   "simulation": "videogamedb.loadTesting.simulations.VideoGameDbSimulation",
-  "simulationId": "videogamedbsimulation-20241219162934183",
-  "start": 1734625780016,
+  "simulationId": "videogamedbsimulation-20241219164957439",
+  "start": 1734627003064,
   "description": "",
   "scenarios": ["Video Game DB Stress Test"],
   "assertions": [
