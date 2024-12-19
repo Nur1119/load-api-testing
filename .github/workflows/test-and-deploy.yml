@@ -1,4 +1,4 @@
-name: Test and Deploy
+name: API and Performance Testing CI/CD
 
 on:
   push:
@@ -13,15 +13,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Step: Checkout the code from the repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
+      # Step: Set up JDK 17 for the build environment
       - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           java-version: '17'
           distribution: 'temurin'
 
+      # Step: Cache Maven dependencies to speed up builds
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
@@ -30,20 +33,26 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      # Шаг 1: Прогон Cucumber тестов
-      - name: Build and run Cucumber tests
+      # Step: Run Cucumber tests to verify API functionality
+      - name: Run Cucumber tests
         run: mvn clean verify
 
-      # Шаг 2: Прогон Gatling тестов
+      # Step: Run Gatling tests for performance and load testing
       - name: Run Gatling tests
         run: mvn gatling:test
 
-      # Шаг 3: Генерация Allure-репорта для Cucumber
+      # Step: Install Allure CLI to generate reports
+      - name: Install Allure CLI
+        run: |
+          sudo apt update
+          sudo apt install -y allure
+
+      # Step: Generate Allure report for Cucumber tests
       - name: Generate Allure report
         run: |
           allure generate target/allure-results -o reports/cucumber
 
-      # Шаг 4: Создание файла index.html с собранными ссылками
+      # Step: Create an index.html file with links to test reports
       - name: Prepare reports index
         run: |
           mkdir -p reports
@@ -55,7 +64,7 @@ jobs:
           echo "<li><a href=\"gatling/$(basename $(dirname $GATLING_REPORT))/index.html\">Gatling Report</a></li>" >> reports/index.html
           echo "</ul></body></html>" >> reports/index.html
 
-      # Шаг 5: Деплой на GitHub Pages
+      # Step: Deploy test reports to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
