@@ -14,18 +14,15 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      # Checkout source code
       - name: Checkout
         uses: actions/checkout@v3
 
-      # Setup JDK
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'temurin'
 
-      # Cache Maven dependencies
       - name: Cache Maven
         uses: actions/cache@v3
         with:
@@ -33,15 +30,12 @@ jobs:
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-maven-
 
-      # Run functional tests (Cucumber + Allure results)
       - name: Run Functional Tests
         run: mvn clean verify
 
-      # Run performance tests (Gatling)
-      - name: Run Performance Tests
+      - name: Run Performance Tests (Gatling)
         run: mvn gatling:test
 
-      # Upload allure-results as artifact for next job
       - name: Upload Allure Results
         if: success()
         uses: actions/upload-artifact@v3
@@ -49,7 +43,6 @@ jobs:
           name: allure-results
           path: target/allure-results
 
-      # Upload Gatling report for next job
       - name: Upload Gatling Report
         if: success()
         uses: actions/upload-artifact@v3
@@ -62,7 +55,6 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
-      # Download artifacts
       - name: Download Allure Results
         uses: actions/download-artifact@v3
         with:
@@ -75,7 +67,13 @@ jobs:
           name: gatling-report
           path: gatling-report
 
-      # Install Allure CLI if needed
+      - name: Debug: List downloaded artifacts
+        run: |
+          echo "Allure Results:"
+          ls -R allure-results
+          echo "Gatling Report:"
+          ls -R gatling-report
+
       - name: Install Allure CLI
         run: |
           sudo apt-get update
@@ -84,11 +82,9 @@ jobs:
           unzip allure-${{ env.ALLURE_VERSION }}.zip -d /opt/allure
           sudo ln -s /opt/allure/allure-${{ env.ALLURE_VERSION }}/bin/allure /usr/bin/allure
 
-      # Generate Allure report
       - name: Generate Allure Report
         run: allure generate allure-results -o reports/cucumber --clean
 
-      # Prepare index.html with links to reports
       - name: Prepare Reports Index
         run: |
           mkdir -p reports
@@ -96,14 +92,18 @@ jobs:
           echo "<html><head><title>Test Reports</title></head><body>" >> reports/index.html
           echo "<h1>Test Reports</h1><ul>" >> reports/index.html
           echo "<li><a href=\"cucumber/index.html\">Cucumber Report</a></li>" >> reports/index.html
+          # Find the Gatling report index.html
           GATLING_REPORT=$(find gatling-report -name "index.html" | head -n 1)
-          RELATIVE_PATH="gatling/$(basename $(dirname $GATLING_REPORT))"
+          echo "Gatling report found at: $GATLING_REPORT"
+          # Extract directory of the report
+          REPORT_DIR=$(dirname $GATLING_REPORT)
+          REPORT_BASENAME=$(basename $REPORT_DIR)
           mkdir -p reports/gatling
-          cp -r $(dirname $GATLING_REPORT) reports/gatling/
-          echo "<li><a href=\"${RELATIVE_PATH}/index.html\">Gatling Report</a></li>" >> reports/index.html
+          cp -r $REPORT_DIR reports/gatling/
+          # Now reports/gatling/REPORT_BASENAME/index.html should exist
+          echo "<li><a href=\"gatling/${REPORT_BASENAME}/index.html\">Gatling Report</a></li>" >> reports/index.html
           echo "</ul></body></html>" >> reports/index.html
 
-      # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:

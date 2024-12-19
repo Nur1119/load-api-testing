@@ -7,7 +7,7 @@ Feature: Video Game Database API
     Examples:
       | action  | name        | id | result  |
       | create  | Super Mario | 1  | created |
-      | delete  |             | 1  | deleted |
+      | delete  | Super Mario | 1  | deleted |
 
   Scenario: Retrieve all video games
     When I request all video games
