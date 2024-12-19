@@ -39,7 +39,7 @@ jobs:
       - name: Prepare reports directory
         run: |
           mkdir -p reports
-          cp -r target/cucumber-reports reports/cucumber
+          cp -r target/allure-results reports/cucumber
           cp -r target/gatling reports/gatling
 
       - name: Deploy to GitHub Pages
