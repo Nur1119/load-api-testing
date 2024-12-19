@@ -41,11 +41,12 @@ jobs:
           mkdir -p reports
           cp -r target/allure-results reports/cucumber
           cp -r target/gatling reports/gatling
-
-      - name: Prepare reports directory
-        run: |
-          mkdir -p reports
-          cp -r target/allure-results reports/cucumber
-          cp -r target/gatling reports/gatling
           cp static/index.html reports/index.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: reports
+
 
